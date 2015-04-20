@@ -1,8 +1,12 @@
 var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
-var bodyParser = require('body-parser');
+var bodyParser = require('./node_modules/body-parser/index.js');
+var cookieParser = require('./node_modules/cookie-parser/index.js');///node_modules/body-parser/index.js
+var session = require('express-session');
 
+var username = 'LU';
+var password = 'YIN';
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -22,25 +26,72 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+//Our Code
+app.use(bodyParser());
+app.use(cookieParser());
+app.use(session({secret: 'ssshhhhh'}));
 
-app.get('/', 
+
+
+function restrict(req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect('/login');
+  }
+}
+
+
+app.post('/login', function(request, response) {
+
+    username = request.body.username;
+    password = request.body.password;
+
+    if(username == 'LU' && password == 'YIN'){
+        request.session.regenerate(function(){
+        request.session.user = username;
+        response.redirect('/index');
+        });
+    }
+    else {
+       res.redirect('login');
+    }
+});
+
+app.get('/logout', function(request, response){
+    request.session.destroy(function(){
+        response.redirect('/');
+    });
+});
+
+
+
+
+
+
+
+
+//End Our Code
+
+app.get('/',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create',
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links',
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -78,6 +129,15 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/signup',
+function(req, res) {
+  res.render('signup');
+});
+
+app.get('/login',
+function(req, res) {
+  res.render('login');
+});
 
 
 /************************************************************/
