@@ -95,7 +95,6 @@ describe('', function() {
 
       requestWithSession(options, function(error, res, body) {
         // res comes from the request module, and may not follow express conventions
-        console.log('res.statusCode: ',res)
         expect(res.statusCode).to.equal(404);
         done();
       });
@@ -288,7 +287,7 @@ describe('', function() {
 
   }); // 'Account Creation'
 
-  xdescribe('Account Login:', function(){
+  describe('Account Login:', function(){
 
     var requestWithSession = request.defaults({jar: true});
 

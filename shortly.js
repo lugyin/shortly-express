@@ -2,12 +2,9 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('./node_modules/body-parser/index.js');
-var cookieParser = require('./node_modules/cookie-parser/index.js');///node_modules/body-parser/index.js
+// var cookieParser = require('./node_modules/cookie-parser/index.js');///node_modules/body-parser/index.js
 var session = require('express-session');
 var bcrypt = require("./node_modules/bcrypt-nodejs/bCrypt.js");
-
-var username;
-var password;
 
 
 var db = require('./app/config');
@@ -30,62 +27,53 @@ app.use(express.static(__dirname + '/public'));
 
 //Our Code
 app.use(bodyParser());
-app.use(cookieParser());
+// app.use(cookieParser());
 app.use(session({secret: 'ssshhhhh'}));
 
 
 
-// function restrict(req, res, next) {
-//   if (req.session.user) {
-//     next();
-//   } else {
-//     req.session.error = 'Access denied!';
-//     res.redirect('/login');
-//   }
-// }
 
-// app.post('/signup', function(request, response) {
 
-//     username = request.body.username;
-//     password = request.body.password;
-//     var salt = bcrypt.genSaltSync(10);
+app.post('/signup', function(request, response) {
+    var username = request.body.username;
+    var password = request.body.password;
 
-//     var hash = bcrypt.hashSync(password, salt);
+    var newUser = new User({
+      username: username,
+      password: password,
+    });
 
-//     var newUser = new User(username, hash, salt);
+    newUser.save().then(function(user) {
+      Users.add(user);
+      request.session.loggedIn = true;
+      response.redirect('/');
+    });
 
-//     Users.add(newUser);
-
-//     request.session.regenerate(function(){
-//       request.session.user = username;
-//       request.session.loggedIn = true;
-//       response.end(username);
-//       // response.redirect('/index');
-//     });
-
-// });
+});
 
 
 
 app.post('/login', function(request, response) {
-
     username = request.body.username;
     password = request.body.password;
-    var salt = bcrypt.genSaltSync(10);
 
-    var hash = bcrypt.hashSync(password, salt);
+    new User({username: username}).fetch().then(function(found) {
+    console.log('found: ' + found);
+    console.log('found: '  + JSON.stringify(found));
+        console.log(found);
+      if (found) {
+        if (password === found.attributes.password) {
+          request.session.loggedIn = true;
+          response.redirect('/');
+        }
+      } else {
+          console.log("Invalid account information!")
+          response.redirect('/login');
+        }
 
-    if(username == 'LU' && hash == hash){
-        request.session.regenerate(function(){
-        request.session.user = username;
-        request.session.loggedIn = true;
-        response.redirect('/index');
-        });
-    }
-    else {
-       res.redirect('login');
-    }
+    });
 });
+
 
 app.get('/logout', function(request, response){
     request.session.destroy(function(){
