@@ -4,9 +4,11 @@ var partials = require('express-partials');
 var bodyParser = require('./node_modules/body-parser/index.js');
 var cookieParser = require('./node_modules/cookie-parser/index.js');///node_modules/body-parser/index.js
 var session = require('express-session');
+var bcrypt = require("./node_modules/bcrypt-nodejs/bCrypt.js");
 
-var username = 'LU';
-var password = 'YIN';
+var username;
+var password;
+
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -33,24 +35,50 @@ app.use(session({secret: 'ssshhhhh'}));
 
 
 
-function restrict(req, res, next) {
-  if (req.session.user) {
-    next();
-  } else {
-    req.session.error = 'Access denied!';
-    res.redirect('/login');
-  }
-}
+// function restrict(req, res, next) {
+//   if (req.session.user) {
+//     next();
+//   } else {
+//     req.session.error = 'Access denied!';
+//     res.redirect('/login');
+//   }
+// }
+
+// app.post('/signup', function(request, response) {
+
+//     username = request.body.username;
+//     password = request.body.password;
+//     var salt = bcrypt.genSaltSync(10);
+
+//     var hash = bcrypt.hashSync(password, salt);
+
+//     var newUser = new User(username, hash, salt);
+
+//     Users.add(newUser);
+
+//     request.session.regenerate(function(){
+//       request.session.user = username;
+//       request.session.loggedIn = true;
+//       response.end(username);
+//       // response.redirect('/index');
+//     });
+
+// });
+
 
 
 app.post('/login', function(request, response) {
 
     username = request.body.username;
     password = request.body.password;
+    var salt = bcrypt.genSaltSync(10);
 
-    if(username == 'LU' && password == 'YIN'){
+    var hash = bcrypt.hashSync(password, salt);
+
+    if(username == 'LU' && hash == hash){
         request.session.regenerate(function(){
         request.session.user = username;
+        request.session.loggedIn = true;
         response.redirect('/index');
         });
     }
@@ -61,12 +89,10 @@ app.post('/login', function(request, response) {
 
 app.get('/logout', function(request, response){
     request.session.destroy(function(){
+        request.session.loggedIn = false;
         response.redirect('/');
     });
 });
-
-
-
 
 
 
@@ -76,19 +102,34 @@ app.get('/logout', function(request, response){
 
 app.get('/',
 function(req, res) {
-  res.render('index');
+  if (req.session.loggedIn) {
+    res.render('index');
+  }
+  else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/create',
 function(req, res) {
-  res.render('index');
+  if (req.session.loggedIn) {
+    res.render('index');
+  }
+  else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/links',
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+  if (req.session.loggedIn) {
+    Links.reset().fetch().then(function(links) {
+      res.send(200, links.models);
+    });
+  } else {
+    res.redirect('/login');
+  }
+
 });
 
 app.post('/links',
